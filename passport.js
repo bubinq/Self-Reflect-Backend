@@ -29,29 +29,29 @@ passport.use(
 );
 
 passport.use(
-    new GithubStrategy(
-      {
-        clientID: process.env.GITHUB_CLIENT_ID,
-        clientSecret: process.env.GITHUB_CLIENT_SECRET,
-        callbackURL: "/auth/github/callback",
-      },
-      async function (accessToken, refreshToken, profile, cb) {
-        const user = await User.findOne({ githubId: profile.id });
-        if (user) {
-          return cb(null, user);
-        } else {
-          const newUser = await User.create({
-            username: profile.username,
-            profilePicture: profile.photos[0].value,
-            githubId: profile.id,
-            displayName: profile.displayName,
-          });
-          const savedUser = await newUser.save();
-          cb(null, savedUser);
-        }
+  new GithubStrategy(
+    {
+      clientID: process.env.GITHUB_CLIENT_ID,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET,
+      callbackURL: "/auth/github/callback",
+    },
+    async function (accessToken, refreshToken, profile, cb) {
+      const user = await User.findOne({ githubId: profile.id });
+      if (user) {
+        return cb(null, user);
+      } else {
+        const newUser = await User.create({
+          username: profile.username,
+          profilePicture: profile.photos[0].value,
+          githubId: profile.id,
+          displayName: profile.displayName,
+        });
+        const savedUser = await newUser.save();
+        cb(null, savedUser);
       }
-    )
-  );
+    }
+  )
+);
 
 passport.serializeUser((user, done) => {
   done(null, user.id);
