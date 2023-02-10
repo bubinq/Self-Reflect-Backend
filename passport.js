@@ -1,7 +1,9 @@
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const GithubStrategy = require("passport-github2").Strategy;
+const LocalStrategy = require("passport-local").Strategy;
 const passport = require("passport");
 const User = require("./models/user.js");
+const verifyPassword = require("./utils").verifyPassword;
 
 passport.use(
   new GoogleStrategy(
@@ -49,6 +51,21 @@ passport.use(
         const savedUser = await newUser.save();
         cb(null, savedUser);
       }
+    }
+  )
+);
+
+passport.use(
+  new LocalStrategy(
+    { usernameField: "email", passwordField: "password" },
+    async function (username, password, done) {
+      const user = await User.findOne({ email: username });
+      if (!user) return done("Email or Password is wrong!");
+      const isValid = await verifyPassword(user.password, password);
+      if (isValid) {
+        return done(null, user);
+      }
+      return done("Email or Password is wrong!", false);
     }
   )
 );
