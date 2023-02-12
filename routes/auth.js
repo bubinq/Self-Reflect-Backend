@@ -5,11 +5,31 @@ const User = require("../models/user.js");
 
 const baseUrl = "http://localhost:5173";
 
-router.post("/login/local", passport.authenticate("local"), (req, res) => {
-  res.status(200).json(req.user);
+router.post("/login", function (req, res, next) {
+  passport.authenticate("local", function (err, user, info) {
+    try {
+      if (err) {
+        throw new Error(err);
+      }
+      if (!user) {
+        return res.send(401, {
+          success: false,
+          message: "authentication failed",
+        });
+      }
+      req.login(user, function (err) {
+        if (err) {
+          throw new Error(err);
+        }
+        return res.json(user);
+      });
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
+  })(req, res, next);
 });
 
-router.post("/register/local", async (req, res) => {
+router.post("/register", async (req, res) => {
   const { email, password, repass } = req.body;
   try {
     if (password !== repass) {
@@ -26,7 +46,12 @@ router.post("/register/local", async (req, res) => {
     });
     const savedUser = await user.save();
 
-    req.login(savedUser);
+    req.login(user, function (err) {
+      if (err) {
+        return next(err);
+      }
+      return res.json(savedUser);
+    });
     // res.status(200).json(savedUser);
   } catch (error) {
     if (error.code === 11000) {
